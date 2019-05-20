@@ -76,15 +76,6 @@ def single_symmetry(s):
     return r
 
 
-# 螺旋矩阵
-def spiral_matrix(n):
-    if n == 1:
-        print(1)
-    else:
-        for i in range(n):
-            print(n)
-
-
 def test_foo():
     assert (foo(153) is True)
     assert (foo(123) is False)
@@ -127,13 +118,10 @@ def test_single_symmetry():
     assert (single_symmetry('[())]') is False)
 
 
-def __main__():
+if __name__ == '__main__':
     test_foo()
     test_fiber()
     test_factorial()
     test_add_squares()
     test_str_symmetry()
     test_single_symmetry()
-
-
-__main__()
