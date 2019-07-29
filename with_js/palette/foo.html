@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>在线画板</title>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/colpick.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="css/colpick.css" type="text/css"/>
+    <link rel="stylesheet" type="text/css" media="screen"
+          href="https://cdn.staticfile.org/ionicons/2.0.1/css/ionicons.min.css">
+    <style type="text/css">
+        #id-div {
+            border-radius: 10px 10px 10px 10px;
+            width: 300px;
+            height: 600px;
+            background: ghostwhite;
+            float: right;
+            text-align: center
+        }
+
+        .list {
+            position: absolute;
+            top: 0;
+        }
+
+        input {
+            width: 50px;
+            height: 50px;
+        }
+
+        .Btn {
+            margin-top: 20px;
+            border-top: #dddddd 1px solid;
+            text-align: center;
+        }
+
+        #range {
+            background-size: 98% 3px;
+            margin-top: 15px;
+            width: 135px;
+            background: linear-gradient(to right, #ccc 0%, #ccc 100%);
+            outline: none;
+            -webkit-appearance: none; /*清除系统默认样式*/
+            height: 3px; /*横条的高度*/
+            display: inline-block;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #fff;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.3),
+            0 3px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            -webkit-appearance: none;
+            border: 0;
+        }
+
+        .range-wrap {
+            margin-bottom: 15px;
+            text-align: center;
+            float: left;
+            padding-left: 5px;
+        }
+
+        .eraser img {
+            width: 30px;
+            height: 30px;
+            float: right;
+            padding-right: 8px;
+        }
+
+        .tool {
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="list">
+    <div class="picker-div">
+        <div id="picker"></div>
+    </div>
+    <div class="tool">
+        <div class="range-wrap">
+            <input type="range" id="range" min="1" max="30" value="5" title="调整笔刷粗细">
+        </div>
+        <div class="eraser">
+            <img src="eraser.png" id="img-eraser"/>
+        </div>
+    </div>
+
+    <div class="Btn">
+        <i class="icon ion-chevron-up"></i>
+    </div>
+</div>
+
+<canvas id="id-canvas"></canvas>
+<script type="text/javascript">
+    let range = document.getElementById("range");
+    let eraser = document.getElementById("img-eraser")
+    let paint = 0
+    let currentColor = ''
+    let lwidth = ''
+    let clear = false;
+
+    // 画布
+    let Canvas = function () {
+        let self = document.getElementById("id-canvas")
+        let pageWidth = document.documentElement.clientWidth;
+        let pageHeight = document.documentElement.clientHeight;
+        self.width = pageWidth
+        self.height = pageHeight
+        return self
+    }
+    // 拾色器
+    $('#picker').colpick({
+        flat: true,
+        layout: 'hex',
+        onChange: function (a, b, c) {//b:为一个颜色
+            currentColor = b;
+            ctx.strokeStyle = '#' + currentColor
+        },
+        onSubmit: function () {
+            ctx.strokeStyle = '#' + currentColor
+            console.log(currentColor);
+        }
+    });
+
+    // 画笔粗细
+    range.onchange = function () {
+        lwidth = range.value
+    };
+    //橡皮擦
+    eraser.onclick = function () {
+        console.log('click')
+        clear = true
+        ctx.strokeStyle = 'white'
+    };
+
+    // 工具栏
+    $('.Btn').click(function () {
+        let e = $('.list')
+        let icon = $('.icon')
+        if (e.css("top") !== "0px") {
+            e.animate({top: "0px"}, "slow");
+            icon.addClass('ion-chevron-up')
+            icon.removeClass('ion-chevron-down')
+        } else {
+            e.animate({top: "-230px"}, "slow");
+            icon.addClass('ion-chevron-down')
+            icon.removeClass('ion-chevron-up')
+        }
+    })
+
+
+    let ctx = Canvas().getContext("2d")
+
+    let main = function () {
+
+        let painting = false;
+        let lastPoint = {x: undefined, y: undefined};
+
+        //鼠标按下事件
+        Canvas().onmousedown = function (e) {
+            painting = true;
+            let x = e.clientX;
+            let y = e.clientY;
+            lastPoint = {"x": x, "y": y};
+            drawCircle(x, y, 0);
+        };
+        //鼠标移动事件
+        Canvas().onmousemove = function (e) {
+            if (painting) {
+                let x = e.clientX;
+                let y = e.clientY;
+                let newPoint = {"x": x, "y": y};
+                drawLine(lastPoint.x, lastPoint.y, newPoint.x, newPoint.y, clear);
+                lastPoint = newPoint;
+            }
+        };
+
+        //鼠标松开事件
+        Canvas().onmouseup = function () {
+            painting = false;
+        }
+    }
+    // 画点函数
+    function drawCircle(x, y, radius) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 划线函数
+    function drawLine(x1, y1, x2, y2) {
+        ctx.lineWidth = lwidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    main()
+</script>
+</body>
+
+</html>
